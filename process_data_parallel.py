@@ -54,10 +54,8 @@ def main():
 
     # Process merged chunks of data to remove duplicates and outlier diagnostic activities
     prepared_data_chunks_df = load_data('data_out/prepared_chunks_data.csv')
-
     prepared_data_df = remove_outlier_diagnostic_activities(prepared_data_chunks_df)
     prepared_data_df = remove_duplicates(prepared_data_df).copy()
-
     # Encode target 'otxsequence' feature using LabelEncoder
     label_encoder = LabelEncoder()
     prepared_data_df.loc[:, 'otxsequence'] = label_encoder.fit_transform(prepared_data_df['otxsequence'])

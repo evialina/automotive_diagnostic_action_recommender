@@ -1,11 +1,8 @@
 import os
-
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 
-
-# ## Data Import
 
 def load_data(filename):
     diagnostic_df = pd.read_csv(f'{filename}',
@@ -13,9 +10,6 @@ def load_data(filename):
                                  low_memory=False)
     return diagnostic_df
 
-
-# ## Feature Engineering: Consultation ID
-# # # !Add description!
 
 def initiate_diagnostic_consultation(diagnostic_df):
     diagnostic_df['timestamp'] = pd.to_datetime(diagnostic_df['sessiontimestamp'])
@@ -28,9 +22,6 @@ def initiate_diagnostic_consultation(diagnostic_df):
     return diagnostic_df
 
 
-# ## Data Restructuring: Derive Vehicle Data, Diagnostic Reads and Subsequent Diagnostic Actions
-# # # !Add description!
-
 def derive_vehicle_state_data(diagnostic_df):
     cols_to_keep = [col for col in diagnostic_df.columns if col not in ['otxsequence', 'date', 'sessionid', 'timestamp']]
     vehicle_current_state_df = diagnostic_df[diagnostic_df['otxsequence'] == 'G2725772'][cols_to_keep].copy()
@@ -41,9 +32,6 @@ def derive_vehicle_state_data(diagnostic_df):
     diagnostic_df = vehicle_current_state_df.merge(diagnostic_actions_df, how='inner', on=['anonymised_vin', 'consultationid'])
     return diagnostic_df
 
-
-# ## Merge Warranty Data
-# # # !Add description!
 
 def merge_diag_warr_data(diagnostic_df, warranty_df):
     diagnostic_df['timestamp'] = pd.to_datetime(diagnostic_df['timestamp'], utc=True)
@@ -75,23 +63,7 @@ def merge_diag_warr_data(diagnostic_df, warranty_df):
     return merged_df
 
 
-# ## Feature Engineering: Derive Temporal Features
-#
-# In this section, we perform feature engineering on the 'timestamp' field to extract valuable temporal information about each diagnostic activity and some additional features from the vehicle's 'warrantydate' and 'builddate' data fields. The temporal features we derive are:
-#
-# 1. **Year**: The year the diagnostic activity was performed. This can help detect yearly trends in the data.
-# 2. **Month**: The month the diagnostic activity was performed. This can help identify any monthly patterns.
-# 3. **Day of Week**: The day of the week the diagnostic activity was performed. This can reveal weekly trends, such as certain activities being more common on certain days of the week.
-# 4. **Week of Year**: The ISO week number of the year the diagnostic activity was performed. This can provide a more granular view of yearly trends.
-# 5. **Time Since Last Activity**: The time in seconds since the last diagnostic activity for each consultation. This can help gauge the frequency of activities.
-# 6. **Elapsed Time**: The time in seconds since the first diagnostic activity in each consultation. This can provide insight into the duration of consultations.
-# 7. **Season of the Year**: The season (Winter, Spring, Summer, Autumn) when the diagnostic activity was performed. This can help identify seasonal trends, such as certain activities being more common in certain seasons.
-# 8. **Age of Vehicle at the Time of Diagnostic Session**: The vehicle's age in years at the time of each diagnostic session. This might be a useful feature because older vehicles might have different diagnostic needs than newer ones.
-# 9. **Time in Days since Warranty Started**: This feature might be useful as vehicles might have different diagnostic needs before and after their warranty starts. Also, customers might behave differently before and after their warranty starts.
-#
-# The resulting dataframe now contains several new features that provide additional temporal context about each diagnostic activity.
-
-def derive_temporal__data_features(merged_df):
+def derive_temporal_data_features(merged_df):
     merged_df.sort_values(['consultationid', 'timestamp'], inplace=True)
 
     merged_df['year'] = merged_df['timestamp'].dt.year
@@ -113,7 +85,9 @@ def derive_temporal__data_features(merged_df):
             
     merged_df['season'] = merged_df['month'].apply(month_to_season)
 
+    # merged_df['builddate'] = pd.to_datetime(merged_df['builddate'], format='%d/%m/%Y').dt.tz_localize('UTC')
     merged_df['builddate'] = pd.to_datetime(merged_df['builddate'], format='%Y-%m-%d').dt.tz_localize('UTC')
+    # merged_df['warrantydate'] = pd.to_datetime(merged_df['warrantydate'], format='%d/%m/%Y').dt.tz_localize('UTC')
     merged_df['warrantydate'] = pd.to_datetime(merged_df['warrantydate'], format='%Y-%m-%d').dt.tz_localize('UTC')
     merged_df['vehicleAgeAtSession'] = (merged_df['timestamp'] - merged_df['builddate']).dt.days / 365
     merged_df['daysSinceWarrantyStart'] = (merged_df['timestamp'] - merged_df['warrantydate']).dt.days
@@ -124,20 +98,6 @@ def derive_temporal__data_features(merged_df):
                inplace=True)
     return merged_df
 
-
-# ## Feature Engineering: Removing Outlier Diagnostic Activities
-#
-# In our dataset, certain diagnostic activities performed by the technicians are extremely common and are recorded in virtually every consultation. While these activities are a routine part of the consultation process, they do not carry significant diagnostic information for our model, and therefore, may not be useful in predicting recommendations. For instance, the 'CONSULTATION_START' activity is logged in every consultation but doesn't contribute meaningful information towards diagnosing a specific vehicle issue.
-#
-# To identify and remove these non-informative activities, we follow a statistical outlier detection approach:
-#
-# 1. **Calculate Commonality**: First, we calculate the commonality score for each activity, which is the frequency of the activity divided by the total number of activities.
-#
-# 2. **Calculate Mean and Standard Deviation**: We then calculate the mean and standard deviation of these commonality scores.
-#
-# 3. **Identify Outliers**: Any activity whose commonality score lies beyond two standard deviations from the mean is considered an outlier. This threshold is based on the empirical rule, which states that for a normal distribution, about 95% of the data lies within two standard deviations of the mean.
-#
-# 4. **Remove Outliers**: Finally, we remove these outlier activities from our dataset, leaving us with a set of activities that are varied enough to provide meaningful information for our model.
 
 def remove_outlier_diagnostic_activities(merged_df):
     activity_commonality = merged_df.value_counts('otxsequence')/merged_df['otxsequence'].count()
@@ -151,7 +111,8 @@ def remove_outlier_diagnostic_activities(merged_df):
     lower = mean - (2 * std)
     upper = mean + (2 * std)
 
-    # Identify the outliers by checking for commonality score less than or greater than lower and upper bounds respectively.
+    # Identify the outliers by checking for commonality score less than or greater than
+    # lower and upper bounds respectively.
     outliers_condition = (activity_commonality.commonalityScore < lower) | (upper < activity_commonality.commonalityScore)
     most_common_activities = activity_commonality[outliers_condition]
 
@@ -165,12 +126,6 @@ def remove_outlier_diagnostic_activities(merged_df):
     return merged_df
 
 
-# ## Data Cleaning: Removing Duplicate Records
-#
-# In this step of the data preprocessing, we aim to remove any duplicate entries in the dataset.
-#
-# We utilize the `drop_duplicates()` function from pandas library for this purpose. The `inplace=True` parameter ensures that the operation is performed on the dataset directly, without the need to assign the result to a new variable.
-
 def remove_duplicates(merged_df):
     num_records_initial = len(merged_df)
     merged_df.drop_duplicates()
@@ -178,10 +133,6 @@ def remove_duplicates(merged_df):
     print(f'Number of duplicate records removed: {num_records_initial - len(merged_df)}')
     return merged_df
 
-
-# ## Data Cleaning: Identify and Handle Missing Values
-# # # !UPDATE!
-# The isna().sum() call returns a pandas Series with column names as the index and the count of NaN values as the values. We then filter this series to only include columns with more than 0 NaN values and print them.
 
 def handle_missing_vals(merged_df):
     # Apply 'Unknown' category to all missing values on categorical variables
@@ -197,7 +148,6 @@ def handle_missing_vals(merged_df):
     for col in unordered_cat_cols:
         merged_df[col] = merged_df[col].fillna('Unknown')
 
-        
     # If daysSinceWarrantyStart NaN, then warrantydate was empty, meaning it is likely that warranty 
     # has not started on the vehicle
     merged_df['daysSinceWarrantyStart'].fillna(0, inplace=True)
@@ -229,14 +179,6 @@ def handle_missing_vals(merged_df):
     return merged_df
 
 
-# ## Data Normalisation: Standardise Numerical Data
-#
-# In this step, we are standardising the values of the 'elapsedTimeSec', 'timeSinceLastActivitySec', 'odomiles', 'vehicleAgeAtSession', and 'daysSinceWarrantyStart' columns. These columns represent continuous numerical data (temporal data and odometer readings), which we expect to follow a normal-like distribution.
-#
-# We are using sklearn's StandardScaler for this task. This method standardizes features by removing the mean and scaling to unit variance. This transformation helps to achieve properties of a standard normal distribution where the mean (average) of each feature is 0 and the standard deviation is 1.
-#
-# By doing this, we are ensuring that these features have the same scale and thus contributing equally to the model's performance.
-
 def standardise_num_data(merged_df):
     float_cols = ['elapsedTimeSec', 'timeSinceLastActivitySec', 'odomiles', 'vehicleAgeAtSession',
               'daysSinceWarrantyStart', 'i_mileage', 'i_time_in_service', 'i_months_in_service']
@@ -257,9 +199,6 @@ def save_csv(df, filename, append=False):
         df.to_csv(filename, index=False)
 
 
-# ## Preprocess and Save Prepared Data
-#
-# Here we are running all the preprocessing steps on the data using parallel computing capabilities and saving the preprocessed data into a CSV file in the as 'prepared_data.csv' in 'data_out' directory.
 def process_data_for_training(filename):
     diagnostic_df = load_data(filename)
     print(f'{filename} - Data import complete\n')
@@ -274,7 +213,7 @@ def process_data_for_training(filename):
     merged_df = merge_diag_warr_data(diagnostic_df, warranty_df)
     print(f'{filename} - Diagnostic and warranty data merged\n')
     
-    merged_df = derive_temporal__data_features(merged_df)
+    merged_df = derive_temporal_data_features(merged_df)
     print(f'{filename} - Temporal features derived\n')
     
     merged_df = handle_missing_vals(merged_df)
