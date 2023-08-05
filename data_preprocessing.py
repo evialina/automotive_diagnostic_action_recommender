@@ -5,10 +5,10 @@ from sklearn.preprocessing import StandardScaler
 
 
 def load_data(filename):
-    diagnostic_df = pd.read_csv(f'{filename}',
-                                 dtype={'dtcbase': 'object', 'dtcfull': 'object', 'odomiles': 'float64'}, 
-                                 low_memory=False)
-    return diagnostic_df
+    data_df = pd.read_csv(f'{filename}',
+                          dtype={'dtcbase': 'object', 'dtcfull': 'object', 'odomiles': 'float64'},
+                          low_memory=False)
+    return data_df
 
 
 def initiate_diagnostic_consultation(diagnostic_df):
@@ -95,7 +95,7 @@ def derive_temporal_data_features(merged_df):
     merged_df.drop(columns=['builddate', 'warrantydate', 'dtcdescription', 'v_warr_date_event', 'i_p_css_description',
                             'i_original_ccc_description', 'i_cpsc_description', 'i_css_description', 'ic_customer_verbatim',
                             'ic_technical_verbatim', 'i_incident_date', 'ic_accepted_date', 'warranty_anonymised_vin'],
-               inplace=True)
+                   inplace=True)
     return merged_df
 
 
@@ -255,7 +255,7 @@ def process_data_for_predictions(filename):
     diagnostic_df = initiate_diagnostic_consultation(diagnostic_df)
     diagnostic_df = derive_vehicle_state_data(diagnostic_df)
     merged_df = append_no_warr_data(diagnostic_df)
-    merged_df = derive_temporal__data_features(merged_df)
+    merged_df = derive_temporal_data_features(merged_df)
     merged_df = handle_missing_vals(merged_df)
     merged_df = remove_duplicates(merged_df)
     merged_df = standardise_num_data(merged_df)
