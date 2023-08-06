@@ -1,5 +1,7 @@
-# # Claims & Vehicle Fault-based Diagnostic Action Prediction (CVFDA) Model
-# This component uses a vehicle's fault and claim history to predict the most suitable diagnostic actions to address a particular fault. This prediction doesn't consider the sequence in which the actions should be executed.
+# Claims & Vehicle Fault-based Diagnostic Action Prediction (CVFDA) Model
+# This component uses a vehicle's fault and claim history to predict the most suitable diagnostic actions to
+# address a particular fault. This prediction doesn't explicitly consider the sequence in which the actions
+# should be executed.
 import pickle
 import numpy as np
 import tensorflow as tf
@@ -133,7 +135,6 @@ def prepare_train_test_data(data_df):
                                                                           test_size=0.2,
                                                                           random_state=42,
                                                                           stratify=target)
-
     train_input = [input_train[feature].values for feature in CATEGORICAL_FEATURES] +\
                   [input_train[NUMERICAL_FEATURES].values]
     test_input = [input_test[feature].values for feature in CATEGORICAL_FEATURES] + \

@@ -85,9 +85,7 @@ def derive_temporal_data_features(merged_df):
             
     merged_df['season'] = merged_df['month'].apply(month_to_season)
 
-    # merged_df['builddate'] = pd.to_datetime(merged_df['builddate'], format='%d/%m/%Y').dt.tz_localize('UTC')
     merged_df['builddate'] = pd.to_datetime(merged_df['builddate'], format='%Y-%m-%d').dt.tz_localize('UTC')
-    # merged_df['warrantydate'] = pd.to_datetime(merged_df['warrantydate'], format='%d/%m/%Y').dt.tz_localize('UTC')
     merged_df['warrantydate'] = pd.to_datetime(merged_df['warrantydate'], format='%Y-%m-%d').dt.tz_localize('UTC')
     merged_df['vehicleAgeAtSession'] = (merged_df['timestamp'] - merged_df['builddate']).dt.days / 365
     merged_df['daysSinceWarrantyStart'] = (merged_df['timestamp'] - merged_df['warrantydate']).dt.days
@@ -260,7 +258,7 @@ def process_data_for_predictions(filename):
     merged_df = remove_duplicates(merged_df)
     merged_df = standardise_num_data(merged_df)
 
-    merged_df = merged_df.drop(columns=['otxsequence', 'sessiontimestamp', 'timestamp'])
+    merged_df = merged_df.drop(columns=['sessiontimestamp', 'timestamp'])
     return merged_df
 
 
