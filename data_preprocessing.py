@@ -170,10 +170,11 @@ def handle_missing_vals(merged_df):
 
     if len(na_columns) > 0:
         print(f"Data fields with NaN values:\n{na_columns}")
-        print(f'Total number of records in the DataFrame: {len(merged_df)}')
+        merged_df.dropna(inplace=True)
+        print(f"All NaN data rows were removed")
     else:
         print('There are no missing values in the DataFrame.')
-    
+    print(f'Total number of records in the DataFrame: {len(merged_df)}')
     return merged_df
 
 

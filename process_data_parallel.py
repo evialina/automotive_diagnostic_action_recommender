@@ -1,10 +1,7 @@
 import os
-import pickle
 import multiprocessing as mp
 import pandas as pd
-from sklearn.preprocessing import LabelEncoder
-from data_preprocessing import load_data, \
-    remove_outlier_diagnostic_activities, remove_duplicates, process_data_for_training, save_csv
+from data_preprocessing import process_data_for_training, save_csv
 
 global lock
 lock = mp.Lock()
