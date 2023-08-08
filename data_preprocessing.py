@@ -198,7 +198,7 @@ def save_csv(df, filename, append=False):
         df.to_csv(filename, index=False)
 
 
-def process_data_for_training(filename):
+def process_data_for_training(filename, warr_data_filename='data/claims_all.csv'):
     diagnostic_df = load_data(filename)
     print(f'{filename} - Data import complete\n')
     
@@ -208,7 +208,7 @@ def process_data_for_training(filename):
     diagnostic_df = derive_vehicle_state_data(diagnostic_df)
     print(f'{filename} - Vehicle state data derived\n')
     
-    warranty_df = pd.read_csv(f'data/claims_all.csv', low_memory=False)
+    warranty_df = pd.read_csv(warr_data_filename, low_memory=False)
     merged_df = merge_diag_warr_data(diagnostic_df, warranty_df)
     print(f'{filename} - Diagnostic and warranty data merged\n')
     
@@ -252,7 +252,8 @@ def append_no_warr_data(diagnostic_df):
 def process_data_for_predictions(filename):
     diagnostic_df = load_data(filename)
     diagnostic_df = initiate_diagnostic_consultation(diagnostic_df)
-    diagnostic_df = derive_vehicle_state_data(diagnostic_df)
+    print(diagnostic_df)
+    # diagnostic_df = derive_vehicle_state_data(diagnostic_df)
     merged_df = append_no_warr_data(diagnostic_df)
     merged_df = derive_temporal_data_features(merged_df)
     merged_df = handle_missing_vals(merged_df)

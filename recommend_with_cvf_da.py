@@ -2,7 +2,7 @@ import pickle
 import keras
 import numpy as np
 from sklearn.preprocessing import LabelEncoder
-from cvf_da_model_mod import encode_categorical_features, CATEGORICAL_FEATURES, NUMERICAL_FEATURES
+from cvf_da_model import encode_categorical_features, CATEGORICAL_FEATURES, NUMERICAL_FEATURES
 from data_preprocessing import process_data_for_predictions
 
 
@@ -11,7 +11,7 @@ def recommend_with_cvf_da():
     cvf_da_model = keras.models.load_model('out/models/cvf_da_fully_trained.keras')
 
     # Prepare data that we are recommending for
-    prepared_data = process_data_for_predictions('manual_test_data/manual_test_diag_data.csv')
+    prepared_data = process_data_for_predictions('test_data/recommender_testing_data_30vehicles.csv')
     prepared_data = encode_categorical_features(prepared_data, LabelEncoder())
     prepared_data_input = [prepared_data[feature].values for feature in CATEGORICAL_FEATURES] + \
                           [prepared_data[NUMERICAL_FEATURES].values]
@@ -32,7 +32,6 @@ def recommend_with_cvf_da():
 
     # Return
     print(f'predicted_actions {predicted_actions}')
-
 
 
 if __name__ == "__main__":
